@@ -1,0 +1,17 @@
+grammar org.xtext.example.mydsl3.MyDsl with org.eclipse.xtext.common.Terminals
+
+generate myDsl "http://www.xtext.org/example/mydsl3/MyDsl"
+
+Model:
+        elements+=Element*;
+
+Element:
+        Person | Greeting;
+
+Person:
+        'person' name=ID;
+
+Greeting:
+        'Hello' person=[Person|ID] '!';
+        
+        
