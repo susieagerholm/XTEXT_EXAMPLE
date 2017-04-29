@@ -1,0 +1,42 @@
+grammar org.xtext.example.mydot.MyDot with org.eclipse.xtext.common.Terminals
+
+generate myDot "http://www.xtext.org/example/mydot/MyDot"
+
+Model:
+    entities+=Entity*
+    usages+=Usage*
+;
+ 
+Entity:
+    "entity" name=ID "{"
+        features+=Feature*
+    "}"
+;
+ 
+Feature:
+    Attribute | Reference
+;
+ 
+Attribute:
+    "attr" name=ID ":" type=DataType
+;
+ 
+enum DataType:
+    string | int
+;
+ 
+Reference:
+    "ref" name=ID ":" type=[Entity]
+;
+
+Usage:
+    "use" ref=DotExpression
+;
+ 
+DotExpression returns Ref:
+    EntityRef ({DotExpression.ref=current}  "." tail=[Feature])*
+;
+ 
+EntityRef returns Ref:
+    {EntityRef} entity=[Entity]
+; 
