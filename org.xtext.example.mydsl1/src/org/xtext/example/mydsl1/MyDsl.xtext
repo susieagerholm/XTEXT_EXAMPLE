@@ -1,0 +1,23 @@
+grammar org.xtext.example.mydsl.MyDsl with org.eclipse.xtext.common.Terminals
+
+generate myDsl "http://www.xtext.org/example/mydsl/MyDsl"
+
+Model:
+  methods += Method*;
+        
+Method:
+  "def" name = ID '{'
+    definitionBlocks += DefinitionBlock*
+  '}'
+;
+
+DefinitionBlock:
+  variableDefinitions += VariableDefinition
+  ("," variableDefinitions += VariableDefinition)*
+  ":"
+  type = ID
+;
+
+VariableDefinition:
+  name = ID
+;
