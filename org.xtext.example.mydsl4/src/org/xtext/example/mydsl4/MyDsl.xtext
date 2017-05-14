@@ -1,0 +1,44 @@
+grammar org.xtext.example.mydsl4.MyDsl with org.eclipse.xtext.common.Terminals
+
+generate myDsl "http://www.xtext.org/example/mydsl4/MyDsl"
+import "http://www.eclipse.org/emf/2002/Ecore" as ecore
+
+Robot returns Robot:
+	'Robot' name=ID
+     'Topology' topologies+=Topology+
+	 (link+=Link | joint+=Joint)* 	 
+;
+
+/*Topology:   
+	'Topology' parent=Ref (joint+=JointRef child+=Ref)+; */
+	
+//Topology:   
+	//parent=Ref ('->' child+=Ref)?; 
+
+//Ref:   
+ //	onDemand=STRING |
+//	{Link} linkRef=[Link] 	
+//;
+
+
+Topology:
+	parent=STRING (joint=JointRef child=Topology)?;  
+	//'robot' robot=[Robot|ID] parent=STRING (joint=JointRef child=Topology)?;
+
+Link returns Link:
+	'Link' name=ID
+;
+
+Joint returns Joint:
+	'Joint' name=ID
+  	'Type' Type=JointType
+	'ChildOf' ChildOf=[Link|ID]
+	'ParentOf' ParentOf=[Link|ID]
+;
+
+enum JointType returns JointType:
+		fixed = 'Fixed' |revolute = 'Revolute' |  prismatic = 'Prismatic' | continuous = 'Continuous';
+		
+JointRef returns JointRef:
+	 fix = '->' | rev = 'r->' | pris = 'p->' | cont = 'c->'  
+;		
