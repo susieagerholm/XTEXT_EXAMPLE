@@ -6,34 +6,61 @@ import "http://www.eclipse.org/emf/2002/Ecore" as ecore
 Robot returns Robot:
 	'Robot' name=ID
      'Topology' topologies+=Topology+
-	 (link+=Link | joint+=Joint)* 	 
+	 (link+=Link | joint+=Joint )*//| dec+=LinkDecorator)*	 
 ;
 
-/*Topology:   
-	'Topology' parent=Ref (joint+=JointRef child+=Ref)+; */
-	
-//Topology:   
-	//parent=Ref ('->' child+=Ref)?; 
 
-//Ref:   
- //	onDemand=STRING |
-//	{Link} linkRef=[Link] 	
-//;
+/*ReUse returns ReUse:
+	ReUser 'is_reuse_of' isReuseOf=[ReUseAble] ( //validate type match between KEYWORD and type of reused 
+		'(' assignments += ASSIGNMENT ( ',' assignments+= ASSIGNMENT)* ')' 
+	)? 
+;*/
 
+//Only Link and Joint should be available as reuse in global scope
+//Others can be reused from their context  -aka Visual from within link and so on...
+ReUser returns ReUseAble: 
+	( 'Link' | 'Joint' | 'Inertia' | 'Visual') ref=ID | reuser=[ReUseAble] 
+;
+
+ReUseAble:
+	Link | Joint | Inertia | Visual
+;
+
+/*LinkDecorator:
+	{LinkDecorator} (ref=[Link])? 
+		inert+=Inertia*		
+;*/
+
+//Awaiting Dot Expression impl...
+ASSIGNMENT:
+	"hello_world"
+;
+
+Visual returns Visual:
+	'Visual' name=ID 
+;
+
+Inertia returns Inertia:
+	'Inertia'(name=ID)?
+	'ixx' ixx=INT 'ixy' ixy=INT 'ixz' ixz=INT 'iyy' iyy=INT 'iyz' iyz=INT 'izz' izz=INT
+;
 
 Topology:
-	parent=STRING (joint=JointRef child=Topology)?;  
+	parent=[Link|ID] (joint=JointRef child=Topology)?;  
 	//'robot' robot=[Robot|ID] parent=STRING (joint=JointRef child=Topology)?;
 
 Link returns Link:
 	'Link' name=ID
+	('isReuseOf' isReuseOf=[Link])?
+	//dec = LinkDecorator
 ;
 
 Joint returns Joint:
 	'Joint' name=ID
-  	'Type' Type=JointType
+  	('isReuseOf' isReuseOf=[Joint])?
 	'ChildOf' ChildOf=[Link|ID]
 	'ParentOf' ParentOf=[Link|ID]
+	'Type' Type=JointType
 ;
 
 enum JointType returns JointType:
@@ -42,3 +69,6 @@ enum JointType returns JointType:
 JointRef returns JointRef:
 	 fix = '->' | rev = 'r->' | pris = 'p->' | cont = 'c->'  
 ;		
+
+
+
