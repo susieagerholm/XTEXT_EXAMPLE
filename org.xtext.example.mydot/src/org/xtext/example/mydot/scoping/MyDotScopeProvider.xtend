@@ -3,16 +3,17 @@
  */
 package org.xtext.example.mydot.scoping
 
+import java.lang.reflect.Method
+import org.eclipse.emf.common.util.EList
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
-import org.xtext.example.mydot.myDot.DotExpression
-import org.xtext.example.mydot.myDot.Reference
-import org.xtext.example.mydot.myDot.Attribute
-import org.xtext.example.mydot.myDot.EntityRef
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
-import org.xtext.example.mydot.myDot.MyDotPackage
+import org.xtext.example.mydot.myDot.DataType
+import org.xtext.example.mydot.myDot.DotExpression
+import org.xtext.example.mydot.myDot.Entity
+import org.xtext.example.mydot.myDot.EntityRef
 
 /**
  * This class contains custom scoping description.
@@ -20,45 +21,56 @@ import org.xtext.example.mydot.myDot.MyDotPackage
  * See https://www.eclipse.org/Xtext/documentation/303_runtime_concepts.html#scoping
  * on how and when to use it.
  */
-//class MyDotScopeProvider extends AbstractMyDotScopeProvider {
+
 class MyDotScopeProvider extends AbstractDeclarativeScopeProvider {	
-	//NEW 2.9 CUSTOM SCOPE
-	override getScope(EObject ctx, EReference ref) {
-   		if (ref == MyDotPackage.Literals.FEATURE) {
-      		return createScopeForFeature()
-   		} else if (ref == MyDotPackage.Literals.ENTITY) {
-      		return createScopeForEntity()
-   	}
-}
-	
-	def IScope createScopeForFeature() {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
-	}
-	
-	def IScope createScopeForEntity() {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
-		//Scopes::scopeFor(head.entity.features)
-		
-	}
 	
 	//OLD PRE 2.9 METHOD FOR CUSTOM SCOPE
-	/*def IScope scope_DotExpression_tail(DotExpression exp, EReference ref) {
-	//override IScope getScope(EObject exp, EReference ref) {
-		//super.getScope(exp, ref)
-        val head = exp.ref;
-        switch (head) {
-            EntityRef : Scopes::scopeFor(head.entity.features)
-            DotExpression : {
-                val tail = head.tail
-                switch (tail) {
-                    Attribute : IScope::NULLSCOPE
-                    Reference : Scopes::scopeFor(tail.type.features)
-                    default: IScope::NULLSCOPE
-                }
+	// EReference never used
+	// DotExpression in a URDF context must have access to 'current' scope object
+	// Clarify if call mechanism provides the correct context object in URDF Model 
+	
+	
+	def IScope scope_DotExpression_tail(DotExpression exp, EReference ref) {
+        val head = exp.ref; 
+        switch (head) { 
+            EntityRef :  {
+					val entity = getObjectByMethodNameAndReturnType(head as Object,"getEntity",null)
+					val features = getObjectByMethodNameAndReturnType(entity,"getFeatures",null) as EList<EObject> 
+					return Scopes::scopeFor(features)
             }
-             
+            DotExpression : {
+				val tailFeature = getObjectByMethodNameAndReturnType(head as Object,"getTail",null)
+				
+				//Attributes
+				if(getObjectByMethodNameAndReturnType(tailFeature,"getType",DataType)!=null)
+					return IScope::NULLSCOPE
+					
+				//Entities
+				val entity = getObjectByMethodNameAndReturnType(tailFeature,"getType",Entity)
+				val features = getObjectByMethodNameAndReturnType(entity,"getFeatures",null) as EList<EObject>
+				return Scopes::scopeFor(features)
+			} // end DotExpression               
             default: IScope::NULLSCOPE
-        }
-    }*/
+        } // end switch head
+    } 
+    
 
-}
+    def <T> Object getObjectByMethodNameAndReturnType(Object container, String name, Class<T> rType) {
+    	val methods = container.class.methods
+		for (Method method : methods) {
+			if(method.name.equalsIgnoreCase(name)) {
+				if(rType == null) {
+					return method.invoke(container)
+				} else {
+					if(method.returnType.name.equals((rType.canonicalName))) {
+						return method.invoke(container)
+					}					
+				}
+			}
+		}
+    }
+    
+ } // end class
+    
+
+
