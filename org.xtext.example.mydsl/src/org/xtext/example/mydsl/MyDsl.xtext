@@ -1,0 +1,82 @@
+grammar org.xtext.example.mydsl.MyDsl with org.eclipse.xtext.common.Terminals
+
+generate myDsl "http://www.xtext.org/example/mydsl/MyDsl"
+import "http://www.eclipse.org/emf/2002/Ecore" as ecore
+
+Robot returns Robot:
+	'Robot' name=ID
+     'Topology' topologies+=Topology+
+	 (link+=Link | joint+=Joint | linkrefs+=LinkRef)*
+;
+
+Topology:
+	parent=[Link|ID] (joint=JointRef child=Topology)?;  
+
+Link:
+	'Link' name=ID
+	('isReuseOf' isReuseOf=[Link])?
+	decorator=LinkDecorator
+;
+
+LinkDecorator:
+	{LinkDecorator} 
+		inert+=Inertia*		
+;
+
+LinkRef:
+	'add_to' ref=[Link|ID] 
+	         decorator=[LinkDecorator|ID]
+;
+
+Joint:
+	'Joint' name=ID
+  	('isReuseOf' isReuseOf=[Joint])?
+	'ChildOf' ChildOf=[Link|ID]
+	'ParentOf' ParentOf=[Link|ID]
+	'Type' Type=JointType
+;
+
+enum JointType returns JointType:
+		fixed = 'Fixed' |revolute = 'Revolute' |  prismatic = 'Prismatic' | continuous = 'Continuous';
+		
+JointRef returns JointRef:
+	 fix = '->' | rev = 'r->' | pris = 'p->' | cont = 'c->'  
+;		
+
+Inertial returns Inertial:
+		'Inertial' (name=ID)?
+		inertia=Inertia
+		mass=Mass
+		(origin=Origin)?	
+;
+
+Inertia returns Inertia:
+	'Inertia' (name=ID)?
+	'ixx' ixx=INT 'ixy' ixy=INT 'ixz' ixz=INT 'iyy' iyy=INT 'iyz' iyz=INT 'izz' izz=INT
+;
+
+
+Visual returns Visual:
+		'Visual'(name=ID)? 
+		(origin=Origin)?
+		
+;
+
+Collision returns Collision:
+		'Collision' name=ID
+		('Origin' origin=Origin)?
+;
+
+Origin returns Origin:
+	    'Origin' (name=ID)?
+	 	'xyz' x=INT y=INT z=INT 
+		('roll_pitch_yaw' roll=INT pitch=INT yaw=INT)? 
+;
+
+Mass returns Mass:
+	'Mass' (name=ID)?
+	'massValueInKilograms' massValueInKilograms=INT
+;
+
+
+
